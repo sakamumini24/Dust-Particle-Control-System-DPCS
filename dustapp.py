@@ -1,3 +1,5 @@
+import os
+os.system("pip install --upgrade pip")
 import numpy as np
 import pandas as pd
 from pandas import plotting
