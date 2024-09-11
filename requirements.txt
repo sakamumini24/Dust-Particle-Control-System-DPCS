@@ -8,7 +8,7 @@ pillow
 scipy
 seaborn
 statsmodels
-streamlit=1.38.0
+streamlit==1.38.0
 streamlit-pandas-profiling
 sweetviz
 xgboost
