@@ -10,8 +10,6 @@ statsmodels
 streamlit
 streamlit-pandas-profiling
 setuptools
-visions
-pandas-profiling
 sweetviz
 xgboost
 ydata-profiling
