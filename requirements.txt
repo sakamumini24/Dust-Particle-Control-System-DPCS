@@ -1,6 +1,5 @@
-
-
 pip
+setuptools==72.1.0
 joblib
 matplotlib
 openpyxl
@@ -9,9 +8,8 @@ pillow
 scipy
 seaborn
 statsmodels
-streamlit
+streamlit=1.38.0
 streamlit-pandas-profiling
-setuptools
 sweetviz
 xgboost
 ydata-profiling
