@@ -15,12 +15,10 @@ matplotlib
 notebook==7.2.1
 notebook_shim==0.2.4
 numba==0.60.0
-numpy==1.26.4
 openpyxl
 pandas
 pillow
 plotnine==0.13.6
-scikit-learn
 scipy
 seaborn
 statsmodels
@@ -31,3 +29,6 @@ pandas-profiling
 sweetviz
 xgboost
 ydata-profiling
+scikit-learn==1.1.0 
+numpy==1.21.6 
+Cython==0.29.30
