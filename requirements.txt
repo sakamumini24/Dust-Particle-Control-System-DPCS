@@ -16,7 +16,7 @@ ydata-profiling
 phik==0.12.3
 visions
 pandas-profiling
-scikit-learn==1.1.0 
+scikit-learn
 numpy==1.21.6 
 Cython==0.29.30
-distutils
+
