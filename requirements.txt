@@ -1,5 +1,5 @@
 
-pip --upgrade pip
+pip
 joblib
 matplotlib
 openpyxl
