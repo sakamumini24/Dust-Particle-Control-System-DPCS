@@ -12,11 +12,9 @@ streamlit==1.38.0
 streamlit-pandas-profiling
 sweetviz
 xgboost
-ydata-profiling
-phik==0.12.3
 visions
 pandas-profiling
 scikit-learn
 numpy==1.21.6 
-Cython==0.29.30
+
 
