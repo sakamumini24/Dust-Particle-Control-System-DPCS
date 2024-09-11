@@ -24,6 +24,7 @@ seaborn
 statsmodels
 streamlit
 streamlit-pandas-profiling
+setuptools
 visions==0.7.1
 pandas-profiling
 sweetviz
