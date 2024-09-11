@@ -18,7 +18,6 @@ numba==0.60.0
 numpy==1.26.4
 openpyxl
 pandas
-pandas-profiling
 pillow
 plotnine==0.13.6
 scikit-learn
@@ -27,7 +26,8 @@ seaborn
 statsmodels
 streamlit
 streamlit-pandas-profiling
+visions==0.7.1
+pandas-profiling
 sweetviz
-visions
 xgboost
 ydata-profiling
