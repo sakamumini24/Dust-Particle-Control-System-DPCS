@@ -17,6 +17,6 @@ ydata-profiling
 scikit-learn
 numpy
 Cython
-phik
+phik==0.12.3
 visions
 pandas-profiling
