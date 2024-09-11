@@ -10,7 +10,7 @@ statsmodels
 streamlit
 streamlit-pandas-profiling
 setuptools
-visions==0.7.1
+visions
 pandas-profiling
 sweetviz
 xgboost
