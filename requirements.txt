@@ -16,7 +16,7 @@ visions
 pandas-profiling
 scikit-learn
 plotly
-ydata-profiling==4.10.0
+ydata-profiling
 
 
  
