@@ -457,7 +457,7 @@ def predict_single_data_point(model, data_point,X_train, recent_data=None):
     data_point_with_rolling_mean = np.append(dp, pm25_rolling_mean)
     scaler=StandardScaler()
     x_scaled=scaler.fit(X_train)
-    scaled_data=scaler.fit_transform(data_point_with_rolling_mean.reshape(1,-1))
+    scaled_data=scaler.transform(data_point_with_rolling_mean.reshape(1,-1))
     # Make prediction
     prediction_log = model.predict(scaled_data)
     prediction_pm25 = np.expm1(prediction_log)  # Convert from log scale to original scale
