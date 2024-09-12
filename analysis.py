@@ -568,6 +568,7 @@ def show_Analysis():
             st.session_state.checked_box = False
         
         st.session_state['page'] = 'train'
+        st.session_state['dataset'] = df
 
         if st.session_state['page'] == 'train':
              # EDA
@@ -820,55 +821,27 @@ def show_predict():
     hour = st.number_input("Hour of the Day", min_value=0, max_value=23, value=12)
     minutes = st.number_input("Minutes", min_value=0, max_value=59, value=30)
 
-    # # Prepare the input data
-    # input_data = pd.DataFrame({
-    #     'pm10': [pm10],
-    #     'temp': [temp],
-    #     'hum': [hum],
-    #     'press': [press],
-    #     'wspd': [wspd],
-    #     'wdir': [wdir],
-    #     'rain': [rain],
-    #     'hour': [hour],
-    #     'minutes': [minutes],
-    # })
     input_data=np.array([pm10,temp,hum,press,wspd,wdir,rain,hour,minutes])
+    if 'dataset' in st.session_state:
+        historical_data = st.session_state['dataset']  # Retrieve the stored dataset
+        historical_data['pm25_log'] = np.log1p(historical_data['pm25'])  # log1p is log(1 + x), avoids issues with zero
 
-    # Historical data placeholder
-    # historical_data = pd.read_csv("historical_pm25_data.csv")  # Pre-loaded historical data for rolling mean calculation
-    file_name=BASE_DIR+'/Reliable.xlsx'
-    historical_data=pd.read_excel(file_name)
+        X_train, _, _, _ = prepareData(historical_data, test_size=0.2, target_encoding=False, timeseries='ml')
+        # Predict button
+        if st.button("Predict"):
 
-    historical_data=historical_data.rename(columns={'pm2.5':'pm25'})
-    
-    historical_data['date']=historical_data['date'].astype(str)
-    historical_data['time']=historical_data['time'].astype(str)
+            # Convert predictions back to the original scale using the inverse of log1p (expm1)
+            prediction = predict_single_data_point(model, input_data,X_train,) 
 
-
-    historical_data['datetime'] = pd.to_datetime(historical_data['date']+' '+historical_data['time'],format='mixed')
-    # df['datetime'] = pd.to_datetime(df['date']+' '+df['time'])
-    historical_data=historical_data.drop(['date','time','timestamp',],axis=1)
-    historical_data.set_index(['datetime'],inplace=True)
-    historical_data=historical_data.drop(['tsp',],axis=1)
-    historical_data=historical_data.astype(float)
+            st.success(f"The predicted PM2.5 level is: {prediction:.2f}")
 
 
-    historical_data['pm25_log'] = np.log1p(historical_data['pm25'])  # log1p is log(1 + x), avoids issues with zero
-
-    X_train, _, _, _ = prepareData(historical_data, test_size=0.2, target_encoding=False, timeseries='ml')
-    # Predict button
-    if st.button("Predict"):
-
-        # Convert predictions back to the original scale using the inverse of log1p (expm1)
-        prediction = predict_single_data_point(model, input_data,X_train,) 
-
-        st.success(f"The predicted PM2.5 level is: {prediction:.2f}")
-
-
-        # Option to retrain or go back to the training page
-        if st.button("Go back to Training"):
-            st.session_state['page'] = 'train'
-            st.rerun()
+            # Option to retrain or go back to the training page
+            if st.button("Go back to Training"):
+                st.session_state['page'] = 'train'
+                st.rerun()
+    else:
+        st.error("No dataset found. Please upload the dataset in the analysis section.")
 
 
         # st.subheader('Modeling')
