@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np 
 import pickle
 import pandas as pd
-from ydata_profiling import ProfileReport
 from streamlit_pandas_profiling import st_profile_report
 from sklearn.cluster import KMeans
 from pandas import plotting
