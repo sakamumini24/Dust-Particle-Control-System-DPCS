@@ -23,9 +23,6 @@ import streamlit as st
 import os
 
 from PIL import Image,ImageFilter,ImageEnhance
-# from predict_page import predictor
-# from EDAappnew import show_main
-from EDAappnew import explore_page
 from analysis import show_Analysis
 from analysis import show_predict
 # for some basic operations
