@@ -725,8 +725,14 @@ def show_Analysis():
                 st.write(result)
 
                 # Save the trained model
-                model_filename =BASE_DIR +f'/models/{model_choice}_model.pkl'
-                st.write(model_filename)
+                # model_filename =BASE_DIR +f'/models/{model_choice}_model.pkl'
+ 
+                model_filename = BASE_DIR+f"/models/{model_choice}_model.pkl"
+                directory = os.path.dirname(model_filename)
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+
+                # st.write(model_filename)
                 joblib.dump(model, model_filename)
                 st.success(f"Model trained and saved as {model_filename}.")
                 # Feature importance visualization
