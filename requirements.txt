@@ -9,7 +9,6 @@ scipy
 seaborn
 statsmodels
 streamlit==1.38.0
-streamlit-pandas-profiling
 sweetviz
 xgboost
 visions
@@ -17,6 +16,7 @@ pandas-profiling
 scikit-learn
 plotly
 ydata-profiling==4.10.0
+streamlit-pandas-profiling==0.1.2                                                                 
 
 
 
