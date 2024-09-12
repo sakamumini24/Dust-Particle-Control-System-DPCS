@@ -247,8 +247,9 @@ def main():
             if result:
                 st.success(f"Logged In as {username}")
                 st.title('Dust Particle Control System')
+                st.sidebar.title('Dust Particle Control System')
 
-                task = st.selectbox("Task", ["Homepage", "Data Modeling","Predict PM2.5", "Profiles"])
+                task = st.sidebar.selectbox("Task", ["Homepage", "Data Modeling","Predict PM2.5", "Profiles"])
 
                 if task == "Homepage":
                     st.write("Welcome to Dust Particle Control System")
