@@ -678,7 +678,7 @@ def show_Analysis():
             res = stats.probplot(data['pm25_log'], plot=plt)
             st.pyplot(fig)
             st.subheader('Modeling')
-            models = ['Linear Regression', 'XGBoost', 'Random Forest', 'Bagging Regressor', 'Voting']
+            models = ['Linear Regression', 'XGBoost', 'RandomForest', 'Bagging Regressor', 'Voting']
             model_choice = st.selectbox("Choose a model", models)
             data = data.select_dtypes(['int', 'float'])
             X_train, X_test, y_train, y_test = prepareData(data, test_size=0.2, target_encoding=False, timeseries='ml')
