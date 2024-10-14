@@ -717,10 +717,10 @@ def show_Analysis():
 
                 mae, mse, r2, rmse = evaluate_model(y_test, test_predictions)
                 result = {
-                    "mean_absolute_error": f"{mae:.2f}",
-                    "mean_squared_error": f"{mse:.2f}",
-                    "Root_mean_squared_error": f"{rmse:.2f}",
-                    "R2_score": f"{r2:.2f}",
+                    "mean_absolute_error": f"{mae:.4f}",
+                    "mean_squared_error": f"{mse:.4f}",
+                    "Root_mean_squared_error": f"{rmse:.4f}",
+                    "R2_score": f"{r2:.4f}",
                 }
 
                 st.write(result)
