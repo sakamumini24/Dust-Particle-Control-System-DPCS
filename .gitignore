@@ -1,0 +1,6 @@
+
+# Ignore model files
+models/*.pkl
+
+__pycache__/
+

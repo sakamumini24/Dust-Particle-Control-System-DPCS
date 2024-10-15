@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np 
 import pickle
 import pandas as pd
+from ydata_profiling import ProfileReport
 from streamlit_pandas_profiling import st_profile_report
 from sklearn.cluster import KMeans
 from pandas import plotting
@@ -457,7 +458,7 @@ def predict_single_data_point(model, data_point,X_train, recent_data=None):
     data_point_with_rolling_mean = np.append(dp, pm25_rolling_mean)
     scaler=StandardScaler()
     x_scaled=scaler.fit(X_train)
-    scaled_data=scaler.transform(data_point_with_rolling_mean.reshape(1,-1))
+    scaled_data=scaler.fit_transform(data_point_with_rolling_mean.reshape(1,-1))
     # Make prediction
     prediction_log = model.predict(scaled_data)
     prediction_pm25 = np.expm1(prediction_log)  # Convert from log scale to original scale
@@ -568,7 +569,6 @@ def show_Analysis():
             st.session_state.checked_box = False
         
         st.session_state['page'] = 'train'
-        st.session_state['dataset'] = df
 
         if st.session_state['page'] == 'train':
              # EDA
@@ -678,7 +678,7 @@ def show_Analysis():
             res = stats.probplot(data['pm25_log'], plot=plt)
             st.pyplot(fig)
             st.subheader('Modeling')
-            models = ['Linear Regression', 'XGBoost', 'RandomForest', 'Bagging Regressor', 'Voting']
+            models = ['Linear Regression', 'XGBoost', 'Random Forest', 'Bagging Regressor', 'Voting']
             model_choice = st.selectbox("Choose a model", models)
             data = data.select_dtypes(['int', 'float'])
             X_train, X_test, y_train, y_test = prepareData(data, test_size=0.2, target_encoding=False, timeseries='ml')
@@ -726,14 +726,8 @@ def show_Analysis():
                 st.write(result)
 
                 # Save the trained model
-                # model_filename =BASE_DIR +f'/models/{model_choice}_model.pkl'
- 
-                model_filename = BASE_DIR+f"/models/{model_choice}_model.pkl"
-                directory = os.path.dirname(model_filename)
-                if not os.path.exists(directory):
-                    os.makedirs(directory)
-
-                # st.write(model_filename)
+                model_filename =BASE_DIR +f'/models/{model_choice}_model.pkl'
+                st.write(model_filename)
                 joblib.dump(model, model_filename)
                 st.success(f"Model trained and saved as {model_filename}.")
                 # Feature importance visualization
@@ -821,27 +815,55 @@ def show_predict():
     hour = st.number_input("Hour of the Day", min_value=0, max_value=23, value=12)
     minutes = st.number_input("Minutes", min_value=0, max_value=59, value=30)
 
+    # # Prepare the input data
+    # input_data = pd.DataFrame({
+    #     'pm10': [pm10],
+    #     'temp': [temp],
+    #     'hum': [hum],
+    #     'press': [press],
+    #     'wspd': [wspd],
+    #     'wdir': [wdir],
+    #     'rain': [rain],
+    #     'hour': [hour],
+    #     'minutes': [minutes],
+    # })
     input_data=np.array([pm10,temp,hum,press,wspd,wdir,rain,hour,minutes])
-    if 'dataset' in st.session_state:
-        historical_data = st.session_state['dataset']  # Retrieve the stored dataset
-        historical_data['pm25_log'] = np.log1p(historical_data['pm25'])  # log1p is log(1 + x), avoids issues with zero
 
-        X_train, _, _, _ = prepareData(historical_data, test_size=0.2, target_encoding=False, timeseries='ml')
-        # Predict button
-        if st.button("Predict"):
+    # Historical data placeholder
+    # historical_data = pd.read_csv("historical_pm25_data.csv")  # Pre-loaded historical data for rolling mean calculation
+    file_name=BASE_DIR+'/Reliable.xlsx'
+    historical_data=pd.read_excel(file_name)
 
-            # Convert predictions back to the original scale using the inverse of log1p (expm1)
-            prediction = predict_single_data_point(model, input_data,X_train,) 
-
-            st.success(f"The predicted PM2.5 level is: {prediction:.2f}")
+    historical_data=historical_data.rename(columns={'pm2.5':'pm25'})
+    
+    historical_data['date']=historical_data['date'].astype(str)
+    historical_data['time']=historical_data['time'].astype(str)
 
 
-            # Option to retrain or go back to the training page
-            if st.button("Go back to Training"):
-                st.session_state['page'] = 'train'
-                st.rerun()
-    else:
-        st.error("No dataset found. Please upload the dataset in the analysis section.")
+    historical_data['datetime'] = pd.to_datetime(historical_data['date']+' '+historical_data['time'],format='mixed')
+    # df['datetime'] = pd.to_datetime(df['date']+' '+df['time'])
+    historical_data=historical_data.drop(['date','time','timestamp',],axis=1)
+    historical_data.set_index(['datetime'],inplace=True)
+    historical_data=historical_data.drop(['tsp',],axis=1)
+    historical_data=historical_data.astype(float)
+
+
+    historical_data['pm25_log'] = np.log1p(historical_data['pm25'])  # log1p is log(1 + x), avoids issues with zero
+
+    X_train, _, _, _ = prepareData(historical_data, test_size=0.2, target_encoding=False, timeseries='ml')
+    # Predict button
+    if st.button("Predict"):
+
+        # Convert predictions back to the original scale using the inverse of log1p (expm1)
+        prediction = predict_single_data_point(model, input_data,X_train,) 
+
+        st.success(f"The predicted PM2.5 level is: {prediction:.2f}")
+
+
+        # Option to retrain or go back to the training page
+        if st.button("Go back to Training"):
+            st.session_state['page'] = 'train'
+            st.rerun()
 
 
         # st.subheader('Modeling')

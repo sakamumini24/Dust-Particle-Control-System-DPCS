@@ -1,5 +1,3 @@
-import os
-os.system("pip install --upgrade pip")
 import numpy as np
 import pandas as pd
 from pandas import plotting
@@ -23,6 +21,9 @@ import streamlit as st
 import os
 
 from PIL import Image,ImageFilter,ImageEnhance
+# from predict_page import predictor
+# from EDAappnew import show_main
+from EDAappnew import explore_page
 from analysis import show_Analysis
 from analysis import show_predict
 # for some basic operations
@@ -247,7 +248,6 @@ def main():
             if result:
                 st.success(f"Logged In as {username}")
                 st.title('Dust Particle Control System')
-                st.sidebar.title('Dust Particle Control System')
 
                 task = st.sidebar.selectbox("Task", ["Homepage", "Data Modeling","Predict PM2.5", "Profiles"])
 
