@@ -2,13 +2,9 @@ import streamlit as st
 import numpy as np 
 import pickle
 import pandas as pd
-from ydata_profiling import ProfileReport
-from streamlit_pandas_profiling import st_profile_report
 from sklearn.cluster import KMeans
 from pandas import plotting
 import os
-# import SessionState
-# for visualizations
 import matplotlib.pyplot as plt
 import seaborn as sns
 plt.style.use('fivethirtyeight')
@@ -17,7 +13,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.cluster import KMeans
 import joblib
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import warnings                                  # `do not disturbe` mode
+import warnings                                  
 warnings.filterwarnings('ignore')
 import seaborn as sns                            # more plots
 from dateutil.relativedelta import relativedelta # working with dates with style
@@ -29,26 +25,20 @@ import scipy.stats as scs
 from itertools import product                    # some useful functions
 from tqdm import tqdm_notebook
 from sklearn.metrics import r2_score, median_absolute_error, mean_absolute_error
-from sklearn.metrics import median_absolute_error, mean_squared_error, mean_squared_log_error
+from sklearn.metrics import median_absolute_error, mean_squared_log_error
 from sklearn.model_selection import TimeSeriesSplit # you have everything done for you
-
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import BaggingRegressor
 from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
-
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
 from scipy import stats
 # let look at a final approach to combine three regression we have so far using Voting method
 from sklearn.ensemble import VotingRegressor
-
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-
 
 
 
@@ -57,7 +47,7 @@ scaler = StandardScaler()
 
 BASE_DIR = os.getcwd()
 MODEL_DIR =BASE_DIR+'/models/'
-
+hist_data=None
 def get_binary_file_downloader_html(bin_file, file_label='File'):
     with open(bin_file, 'rb') as f:
         data = f.read()
@@ -104,38 +94,12 @@ def Dataset_upload():
 
 
 
+
+
+
 def save_model(model,modelpath):
     joblib.dump(model, modelpath )
     print(f"Model saved successfully in {modelpath}")
-
-
-
-# def Dataset_upload():
-# 	# st.markdown('## Upload dataset') #Streamlit also accepts markdown
-# 	# st.markdown('**Upload CSV or Excel File**')
-# 	data_file = st.file_uploader("**Upload a CSV or Excel file here**", type=["csv", "xlsx"]) #data uploader
-# 	if data_file is not None:
-# 		# Check file type and read accordingly
-# 		if data_file.name.endswith('.csv'):
-# 			df = pd.read_csv(data_file)
-# 		elif data_file.name.endswith('.xlsx'):
-# 			df = pd.read_excel(data_file, engine='openpyxl')
-		
-#         df=df.rename(columns={'pm2.5':'pm25'})
-#         df=df.drop(['tsp',],axis=1)
-#         df['date']=df['date'].astype(str)
-#         df['time']=df['time'].astype(str)
-#         df['datetime'] = pd.to_datetime(df['date']+' '+df['time'],format='mixed')
-#         # df=df.drop(['date','time','timestamp',],axis=1)
-#         # df.set_index(['datetime'],inplace=True)
-#         # df=df.astype(float)
-# 		# # Display data
-# 		# st.write("## Data Preview")
-# 		# st.dataframe(df)
-
-# 		return df
-
-
 
 
 
@@ -440,7 +404,7 @@ def plotLSTMResults(model, X_test, y_test, plot_intervals=False, plot_anomalies=
 	st.pyplot(fig)
 
 
-def predict_single_data_point(model, data_point,X_train, recent_data=None):
+def predict_single_data_point(model, data_point,X_train, scaler):
     """
     Predict PM2.5 for a single data point, handling missing pm25_rolling_mean.
 
@@ -452,18 +416,14 @@ def predict_single_data_point(model, data_point,X_train, recent_data=None):
     if isinstance(data_point, dict):
         data_point = pd.Series(data_point)
 
-    dp=data_point
     pm25_rolling_mean=X_train['pm25_rolling_mean'].mean()
-    # Combine the data point with the pm25_rolling_mean value
+    dp=data_point
     data_point_with_rolling_mean = np.append(dp, pm25_rolling_mean)
-    scaler=StandardScaler()
-    x_scaled=scaler.fit(X_train)
-    scaled_data=scaler.fit_transform(data_point_with_rolling_mean.reshape(1,-1))
-    # Make prediction
-    prediction_log = model.predict(scaled_data)
-    prediction_pm25 = np.expm1(prediction_log)  # Convert from log scale to original scale
+    newdp=np.array([data_point_with_rolling_mean])
+    newdp_scaled=scaler.transform(newdp)
+    test_pred = model.predict(newdp_scaled)
+    prediction_pm25 = np.expm1(test_pred)
     return prediction_pm25[0]
-
 
 # the results by train set and test set are rather different, to see it
 def plot_prediction(label=None, prediction=None,title=None, limit=200):
@@ -561,6 +521,7 @@ def show_Analysis():
     # st.title("CUSTOMER SEGMENTATION APP")
     
     df = Dataset_upload()
+    st.session_state['uploaded_data']= df
     
     if df is not None:
         if "button_clicked" not in st.session_state:
@@ -678,13 +639,14 @@ def show_Analysis():
             res = stats.probplot(data['pm25_log'], plot=plt)
             st.pyplot(fig)
             st.subheader('Modeling')
-            models = ['Linear Regression', 'XGBoost', 'Random Forest', 'Bagging Regressor', 'Voting']
+            models = ['Linear Regression', 'XGBoost', 'RandomForest', 'Bagging Regressor', 'Voting']
             model_choice = st.selectbox("Choose a model", models)
             data = data.select_dtypes(['int', 'float'])
             X_train, X_test, y_train, y_test = prepareData(data, test_size=0.2, target_encoding=False, timeseries='ml')
             X_train_scaled = scaler.fit_transform(X_train)
             X_test_scaled = scaler.transform(X_test)
-
+            # # Save the scaler to sessions
+            st.session_state['scaler']=scaler
             model = None
             if model_choice == 'Linear Regression':
                 model = LinearRegression()
@@ -798,6 +760,14 @@ def show_predict():
         st.write("No models available for prediction. Please train a model first.")
         return
 
+
+
+    # Step 1: Initialize scaler and store it in session state
+    if 'scaler' not in st.session_state:
+        # Load the scaler (ensure you have 'scaler.pkl' in the correct path)
+        st.session_state.scaler = joblib.load(BASE_DIR+'/scaler.pkl')
+
+
     # Select model from available models
     selected_model = st.selectbox("Select a saved model", model_files)
     model_path = os.path.join(MODEL_DIR, selected_model)
@@ -815,99 +785,26 @@ def show_predict():
     hour = st.number_input("Hour of the Day", min_value=0, max_value=23, value=12)
     minutes = st.number_input("Minutes", min_value=0, max_value=59, value=30)
 
-    # # Prepare the input data
-    # input_data = pd.DataFrame({
-    #     'pm10': [pm10],
-    #     'temp': [temp],
-    #     'hum': [hum],
-    #     'press': [press],
-    #     'wspd': [wspd],
-    #     'wdir': [wdir],
-    #     'rain': [rain],
-    #     'hour': [hour],
-    #     'minutes': [minutes],
-    # })
     input_data=np.array([pm10,temp,hum,press,wspd,wdir,rain,hour,minutes])
 
-    # Historical data placeholder
-    # historical_data = pd.read_csv("historical_pm25_data.csv")  # Pre-loaded historical data for rolling mean calculation
-    file_name=BASE_DIR+'/Reliable.xlsx'
-    historical_data=pd.read_excel(file_name)
-
-    historical_data=historical_data.rename(columns={'pm2.5':'pm25'})
     
-    historical_data['date']=historical_data['date'].astype(str)
-    historical_data['time']=historical_data['time'].astype(str)
+    # Check if the dataset is available in session state
+    if 'uploaded_data' in st.session_state:
+        historical_data = st.session_state['uploaded_data']   
+        historical_data['pm25_log'] = np.log1p(historical_data['pm25'])  # log1p is log(1 + x), avoids issues with zero
+        X_train, _, _, _ = prepareData(historical_data, test_size=0.2, target_encoding=False, timeseries='ml')
+        # Predict button
+        if st.button("Predict"):
+            load_scalers=st.session_state.scaler
+            # Convert predictions back to the original scale using the inverse of log1p (expm1)
+            prediction = predict_single_data_point(model, input_data,X_train,load_scalers) 
 
+            st.success(f"The predicted PM2.5 level is: {prediction:.2f}")
 
-    historical_data['datetime'] = pd.to_datetime(historical_data['date']+' '+historical_data['time'],format='mixed')
-    # df['datetime'] = pd.to_datetime(df['date']+' '+df['time'])
-    historical_data=historical_data.drop(['date','time','timestamp',],axis=1)
-    historical_data.set_index(['datetime'],inplace=True)
-    historical_data=historical_data.drop(['tsp',],axis=1)
-    historical_data=historical_data.astype(float)
+            # Option to retrain or go back to the training page
+            if st.button("Go back to Training"):
+                st.session_state['page'] = 'train'
+                st.rerun()
 
-
-    historical_data['pm25_log'] = np.log1p(historical_data['pm25'])  # log1p is log(1 + x), avoids issues with zero
-
-    X_train, _, _, _ = prepareData(historical_data, test_size=0.2, target_encoding=False, timeseries='ml')
-    # Predict button
-    if st.button("Predict"):
-
-        # Convert predictions back to the original scale using the inverse of log1p (expm1)
-        prediction = predict_single_data_point(model, input_data,X_train,) 
-
-        st.success(f"The predicted PM2.5 level is: {prediction:.2f}")
-
-
-        # Option to retrain or go back to the training page
-        if st.button("Go back to Training"):
-            st.session_state['page'] = 'train'
-            st.rerun()
-
-
-        # st.subheader('Modeling')
-        # models = ['Linear Regression', 'XGBoost', 'Random Forest', 'Bagging Regressor', 'Voting']
-        # model_choice = st.selectbox("Choose a model", models)
-        # data = data.select_dtypes(['int', 'float'])
-        # X_train, X_test, y_train, y_test = prepareData(data, test_size=0.2, target_encoding=False, timeseries='ml')
-        # X_train_scaled = scaler.fit_transform(X_train)
-        # X_test_scaled = scaler.transform(X_test)
-
-        # model = None
-        # if model_choice == 'Linear Regression':
-        #     model = LinearRegression()
-        # elif model_choice == 'XGBoost':
-        #     model = XGBRegressor()
-        # elif model_choice == 'Bagging Regressor':
-        #     model = BaggingRegressor(n_estimators=100, random_state=42)
-        # elif model_choice == 'RandomForest':
-        #     model = RandomForestRegressor()
-        # elif model_choice == 'Voting':
-        #     rnd_reg = RandomForestRegressor(n_estimators=200, max_depth=10, random_state=42)
-        #     bag_reg = BaggingRegressor(n_estimators=200, random_state=42)
-        #     xgb_reg = XGBRegressor(n_estimators=200, max_depth=10, learning_rate=0.1, random_state=42)
-        #     model = VotingRegressor(
-        #         estimators=[('rnd', rnd_reg), ('bag', bag_reg), ('xgb', xgb_reg)],
-        #     )
-
-        # trains = st.checkbox('Train model')
-        # if trains and model is not None:
-        #     model.fit(X_train_scaled, y_train)
-        #     train_predictions = model.predict(X_train_scaled)
-        #     test_predictions = model.predict(X_test_scaled)
-
-        #     plot_prediction(y_train, train_predictions,title='Training Data:')
-        #     test_predictions = model.predict(X_test_scaled)
-        #     plot_prediction(y_test, test_predictions,title='Testing Data:')
-        #     plotModelResults(model, X_train=X_train_scaled, X_test=X_test_scaled,y_train=y_train,y_test=y_test, plot_intervals=False)
-        #     plotRegression(y_test, test_predictions)
-
-
-        #     mae, mse, r2, rmse = evaluate_model(y_test, test_predictions)
-        #     result = {
-        #         "mean_absolute_error": f"{mae:.2f}",
-
-
-
-
+    else:
+        st.error("Upload Dataset in Data Modeling page")
