@@ -762,10 +762,10 @@ def show_predict():
 
 
 
-    # Step 1: Initialize scaler and store it in session state
-    if 'scaler' not in st.session_state:
-        # Load the scaler (ensure you have 'scaler.pkl' in the correct path)
-        st.session_state.scaler = joblib.load(BASE_DIR+'/scaler.pkl')
+    # # Step 1: Initialize scaler and store it in session state
+    # if 'scaler' not in st.session_state:
+    #     # Load the scaler (ensure you have 'scaler.pkl' in the correct path)
+    #     st.session_state.scaler = joblib.load(BASE_DIR+'/scaler.pkl')
 
 
     # Select model from available models
