@@ -745,7 +745,9 @@ def show_Analysis():
 
 
 
-
+@st.cache_resource
+def load_app_model(path):
+    return joblib.load(path)
 
 
 
@@ -773,7 +775,7 @@ def show_predict():
     model_path = os.path.join(MODEL_DIR, selected_model)
 
     # Load the selected model
-    model = joblib.load(model_path)
+    model = load_app_model(model_path)
     # Input fields for the features
     pm10 = st.number_input("PM10")
     temp = st.number_input("Temperature (°C)")
