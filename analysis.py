@@ -772,10 +772,6 @@ def show_predict():
 
     # Select model from available models
     selected_model = st.selectbox("Select a saved model", model_files)
-    model_path = os.path.join(MODEL_DIR, selected_model)
-
-    # Load the selected model
-    model = load_app_model(model_path)
     # Input fields for the features
     pm10 = st.number_input("PM10")
     temp = st.number_input("Temperature (°C)")
@@ -797,6 +793,9 @@ def show_predict():
         X_train, _, _, _ = prepareData(historical_data, test_size=0.2, target_encoding=False, timeseries='ml')
         # Predict button
         if st.button("Predict"):
+            # model_path = os.path.join(MODEL_DIR, selected_model)
+            model_path = os.path.join(os.getcwd(), 'models', f'{selected_model}')
+            model = load_app_model(model_path)
             load_scalers=st.session_state.scaler
             # Convert predictions back to the original scale using the inverse of log1p (expm1)
             prediction = predict_single_data_point(model, input_data,X_train,load_scalers) 
