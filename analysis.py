@@ -55,6 +55,8 @@ def get_binary_file_downloader_html(bin_file, file_label='File'):
     href = f'<a href="data:application/octet-stream;base64,{bin_str}" download="{os.path.basename(bin_file)}">Download {file_label}</a>'
     return href
 
+
+
 # Evaluation function
 def evaluate_model(y_true, y_pred):
     mae = mean_absolute_error(y_true, y_pred)
@@ -447,6 +449,17 @@ def plotLSTMResults(model, X_test, y_test, plot_intervals=False, plot_anomalies=
 	st.pyplot(fig)
 
 
+
+
+def predict_pm25(model, input_features):
+    try:
+        prediction = model.predict(input_features)
+        prediction_pm25 = np.expm1(prediction)
+        return prediction_pm25[0]
+    except Exception as e:
+        st.error(f"Prediction failed: {str(e)}")
+        return None
+
 def predict_single_data_point(model, data_point,X_train, scaler):
     """
     Predict PM2.5 for a single data point, handling missing pm25_rolling_mean.
@@ -464,9 +477,8 @@ def predict_single_data_point(model, data_point,X_train, scaler):
     data_point_with_rolling_mean = np.append(dp, pm25_rolling_mean)
     newdp=np.array([data_point_with_rolling_mean])
     newdp_scaled=scaler.transform(newdp)
-    test_pred = model.predict(newdp_scaled)
-    prediction_pm25 = np.expm1(test_pred)
-    return prediction_pm25[0]
+    test_pred =predict_pm25(model, newdp_scaled)
+    return test_pred
 
 # the results by train set and test set are rather different, to see it
 def plot_prediction(label=None, prediction=None,title=None, limit=200):
@@ -540,26 +552,15 @@ def save_model(model, model_name):
     joblib.dump(model, model_filename, compress=3)
     print(f"Model saved to: {model_filename}")
 
-
-
-# Function to predict using the model
-def predict_pm25(input_data, historical_data, model, window=30):
-    # model = joblib.load('/content/drive/MyDrive/2024/Dustpredict/Dust-predict/models/voting_reg.pkl')
-    
-    # Use historical data to calculate rolling mean dynamically
-    # historical_data = historical_data.append(input_data, ignore_index=True)
-    historical_data = pd.concat([historical_data, input_data], ignore_index=True)
-
-    # historical_data["pm25"]
-    rolling_mean = calculate_rolling_mean(historical_data, window)
-    input_data['pm25_rolling_mean'] = rolling_mean
-    input_data=prepare_single_data_point(input_data)
-    input_data=input_data.drop('pm25',axis=1)
-    st.write(input_data)
-    prediction = model.predict(input_data)
-    return prediction
-
-
+@st.cache_resource
+def load_app_model(model_path):
+    """Loads the model from the specified path with error handling."""
+    try:
+        return joblib.load(model_path)
+    except FileNotFoundError:
+        st.error(f"Model not found at {model_path}. Please check your deployment.")
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
 
 
 # Function to calculate the rolling mean for the prediction
@@ -807,73 +808,6 @@ def show_Analysis():
 
 
 
-@st.cache_resource
-def load_app_model(path):
-    return joblib.load(path)
-
-
-# def show_predict():
-#     st.subheader('Prediction')
-
-#     # List all available model files in the directory
-#     model_files = [f for f in os.listdir(MODEL_DIR) if f.endswith('.pkl')]
-
-#     if len(model_files) == 0:
-#         st.write("No models available for prediction. Please train a model first.")
-#         return
-
-#     # Select model from available models
-#     selected_model = st.selectbox("Select a saved model", model_files)
-
-#     # Input fields for the features
-#     pm10 = st.number_input("PM10")
-#     temp = st.number_input("Temperature (°C)")
-#     hum = st.number_input("Humidity (%)")
-#     press = st.number_input("Pressure (hPa)")
-#     wspd = st.number_input("Wind Speed (m/s)")
-#     wdir = st.number_input("Wind Direction (°)")
-#     rain = st.number_input("Rainfall (mm)")
-#     hour = st.number_input("Hour of the Day", min_value=0, max_value=23, value=12)
-#     minutes = st.number_input("Minutes", min_value=0, max_value=59, value=30)
-
-#     input_data = np.array([pm10, temp, hum, press, wspd, wdir, rain, hour, minutes])
-
-#     # Check if the dataset is available in session state
-#     if 'uploaded_data' in st.session_state and isinstance(st.session_state['uploaded_data'], pd.DataFrame):
-#         historical_data = st.session_state['uploaded_data']
-#         # st.subheader(sample dataset)
-#         # st.write(historical_data.head()) 
-#         # Check if 'pm25' column exists before performing log1p
-#         if 'pm25' in historical_data.columns:
-#             historical_data['pm25_log'] = np.log1p(historical_data['pm25'])  # Avoids issues with zero
-#         else:
-#             st.error("'pm25' column is missing in the uploaded dataset.")
-#             return
-
-#         # Prepare data for prediction
-#         X_train, _, _, _ = prepareData(historical_data, test_size=0.2, target_encoding=False, timeseries='ml')
-
-#         # Predict button
-#         if st.button("Predict"):
-#             model_path = os.path.join(MODEL_DIR, selected_model)
-#             try:
-#                 model = load_app_model(model_path)
-#                 load_scalers = st.session_state.scaler
-
-#                 # Make prediction
-#                 prediction = predict_single_data_point(model, input_data, X_train, load_scalers) 
-
-#                 st.success(f"The predicted PM2.5 level is: {prediction:.2f}")
-                
-#                 # Option to retrain or go back to the training page
-#                 if st.button("Go back to Training"):
-#                     st.session_state['page'] = 'train'
-#                     st.rerun()
-#             except Exception as e:
-#                 st.error(f"Error loading model: {e}")
-
-#     else:
-#         st.error("No valid DataFrame found in session state. Please upload the data.")
 
 
 
@@ -935,25 +869,23 @@ def show_predict():
                     st.error(f"Model file '{selected_model}' not found.")
                     return
 
-                # Load the model and scalers
                 model = load_app_model(model_path)
-                load_scalers = st.session_state.get('scaler')
 
-                if load_scalers is None:
+                # Retrieve scaler from session state
+                scaler = st.session_state.get('scaler')
+                if scaler is None:
                     st.error("Scaler not found in session state. Please re-train or upload the scaler.")
                     return
 
                 # Make prediction
-                prediction = predict_single_data_point(model, input_data, X_train, load_scalers)
-                st.success(f"The predicted PM2.5 level is: {prediction:.2f}")
+                result = predict_single_data_point(model, input_data, X_train, scaler)
+                if result is not None:
+                    st.success(f"Predicted PM2.5: {result:.2f}")
 
-                # Option to go back to training page
+                # Option to return to training page
                 if st.button("Go back to Training"):
                     st.session_state['page'] = 'train'
                     st.rerun()
 
             except Exception as e:
                 st.error(f"Error during prediction: {e}")
-
-    else:
-        st.error("No valid DataFrame found in session state. Please upload the data.")
