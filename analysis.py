@@ -67,17 +67,55 @@ def convert_df(df):
    return df.to_csv().encode('utf-8')
 
 
+# def Dataset_upload():
+#     # st.markdown('## Upload dataset') # Streamlit also accepts markdown
+#     # st.markdown('**Upload CSV or Excel File**')
+#     data_file = st.file_uploader("**Upload a CSV or Excel file here**", type=["csv", "xlsx"])  # data uploader
+#     if data_file is not None:
+#         # Check file type and read accordingly
+#         if data_file.name.endswith('.csv'):
+#             df = pd.read_csv(data_file)
+#         elif data_file.name.endswith('.xlsx'):
+#             df = pd.read_excel(data_file, engine='openpyxl')
+        
+#         df = df.rename(columns={'pm2.5': 'pm25'})
+#         df = df.drop(['tsp'], axis=1)
+#         df['date'] = df['date'].astype(str)
+#         df['time'] = df['time'].astype(str)
+#         df['datetime'] = pd.to_datetime(df['date'] + ' ' + df['time'], format='mixed')
+#         df = df.drop(['date', 'time', 'timestamp'], axis=1)
+#         df.set_index(['datetime'], inplace=True)
+#         df = df.astype(float)
+#         # Display data
+#         st.write("## Data Preview")
+#         st.dataframe(df)
+
+#         return df
+
+
 def Dataset_upload():
-    # st.markdown('## Upload dataset') # Streamlit also accepts markdown
-    # st.markdown('**Upload CSV or Excel File**')
-    data_file = st.file_uploader("**Upload a CSV or Excel file here**", type=["csv", "xlsx"])  # data uploader
+    # Check if the dataset is already in session state
+    if 'uploaded_data' in st.session_state and isinstance(st.session_state['uploaded_data'], pd.DataFrame):
+        st.success("Existing dataset loaded from session!")
+        st.write("## Data Preview")
+        st.dataframe(st.session_state['uploaded_data'])
+
+        # Option to re-upload the dataset
+        reupload = st.checkbox("Re-upload dataset")
+        if not reupload:
+            return st.session_state['uploaded_data']
+
+    # File uploader for new dataset
+    data_file = st.file_uploader("**Upload a CSV or Excel file here**", type=["csv", "xlsx"])  
+
     if data_file is not None:
-        # Check file type and read accordingly
+        # Read the uploaded file
         if data_file.name.endswith('.csv'):
             df = pd.read_csv(data_file)
         elif data_file.name.endswith('.xlsx'):
             df = pd.read_excel(data_file, engine='openpyxl')
-        
+
+        # Data preprocessing steps
         df = df.rename(columns={'pm2.5': 'pm25'})
         df = df.drop(['tsp'], axis=1)
         df['date'] = df['date'].astype(str)
@@ -86,14 +124,19 @@ def Dataset_upload():
         df = df.drop(['date', 'time', 'timestamp'], axis=1)
         df.set_index(['datetime'], inplace=True)
         df = df.astype(float)
-        # Display data
+
+        # Store the dataset in session state
+        st.session_state['uploaded_data'] = df
+
+        # Display the data
         st.write("## Data Preview")
         st.dataframe(df)
 
         return df
 
-
-
+    # If no data is uploaded and nothing is in session state, show a message
+    st.info("Please upload a dataset.")
+    return None
 
 
 
@@ -515,14 +558,24 @@ def calculate_rolling_mean(df, window=30):
         # # Example: Rolling mean for PM2.5
     df['pm25_rolling_mean'] = df['pm25_log'].rolling(window=30).mean()
     return df['pm25_rolling_mean']
+
+
+
+
+
+
+
+
+
+
 def show_Analysis():
     # st.title("CUSTOMER SEGMENTATION SYSTEM")
     # st.set_option('deprecation.showPyplotGlobalUse', False)
     # st.title("CUSTOMER SEGMENTATION APP")
     
     df = Dataset_upload()
-    st.session_state['uploaded_data']= df
-    
+
+
     if df is not None:
         if "button_clicked" not in st.session_state:
             st.session_state.button_clicked = False
@@ -689,9 +742,9 @@ def show_Analysis():
 
                 # Save the trained model
                 model_filename =BASE_DIR +f'/models/{model_choice}_model.pkl'
-                st.write(model_filename)
+                # st.write(model_filename)
                 joblib.dump(model, model_filename)
-                st.success(f"Model trained and saved as {model_filename}.")
+               
                 # Feature importance visualization
                 feature_names = X_train.columns
                 if model_choice != 'Voting':
@@ -713,7 +766,8 @@ def show_Analysis():
 
 
 
-                st.success("Model trained successfully and saved.")
+                # st.success("Model trained successfully and saved.")
+                st.success(f"Model trained and saved as {model_filename}.")
                 st.write("Now you can proceed to the prediction page.")
 
                 # # When the user wants to navigate to the prediction page
@@ -750,9 +804,7 @@ def load_app_model(path):
     return joblib.load(path)
 
 
-
 def show_predict():
-
     st.subheader('Prediction')
 
     # List all available model files in the directory
@@ -762,16 +814,9 @@ def show_predict():
         st.write("No models available for prediction. Please train a model first.")
         return
 
-
-
-    # # Step 1: Initialize scaler and store it in session state
-    # if 'scaler' not in st.session_state:
-    #     # Load the scaler (ensure you have 'scaler.pkl' in the correct path)
-    #     st.session_state.scaler = joblib.load(BASE_DIR+'/scaler.pkl')
-
-
     # Select model from available models
     selected_model = st.selectbox("Select a saved model", model_files)
+
     # Input fields for the features
     pm10 = st.number_input("PM10")
     temp = st.number_input("Temperature (°C)")
@@ -783,29 +828,41 @@ def show_predict():
     hour = st.number_input("Hour of the Day", min_value=0, max_value=23, value=12)
     minutes = st.number_input("Minutes", min_value=0, max_value=59, value=30)
 
-    input_data=np.array([pm10,temp,hum,press,wspd,wdir,rain,hour,minutes])
+    input_data = np.array([pm10, temp, hum, press, wspd, wdir, rain, hour, minutes])
 
-    
     # Check if the dataset is available in session state
-    if 'uploaded_data' in st.session_state:
-        historical_data = st.session_state['uploaded_data']   
-        historical_data['pm25_log'] = np.log1p(historical_data['pm25'])  # log1p is log(1 + x), avoids issues with zero
+    if 'uploaded_data' in st.session_state and isinstance(st.session_state['uploaded_data'], pd.DataFrame):
+        historical_data = st.session_state['uploaded_data']
+        # st.subheader(sample dataset)
+        # st.write(historical_data.head()) 
+        # Check if 'pm25' column exists before performing log1p
+        if 'pm25' in historical_data.columns:
+            historical_data['pm25_log'] = np.log1p(historical_data['pm25'])  # Avoids issues with zero
+        else:
+            st.error("'pm25' column is missing in the uploaded dataset.")
+            return
+
+        # Prepare data for prediction
         X_train, _, _, _ = prepareData(historical_data, test_size=0.2, target_encoding=False, timeseries='ml')
+
         # Predict button
         if st.button("Predict"):
-            # model_path = os.path.join(MODEL_DIR, selected_model)
-            model_path = os.path.join(os.getcwd(), 'models', f'{selected_model}')
-            model = load_app_model(model_path)
-            load_scalers=st.session_state.scaler
-            # Convert predictions back to the original scale using the inverse of log1p (expm1)
-            prediction = predict_single_data_point(model, input_data,X_train,load_scalers) 
+            model_path = os.path.join(MODEL_DIR, selected_model)
+            try:
+                model = load_app_model(model_path)
+                load_scalers = st.session_state.scaler
 
-            st.success(f"The predicted PM2.5 level is: {prediction:.2f}")
+                # Make prediction
+                prediction = predict_single_data_point(model, input_data, X_train, load_scalers) 
 
-            # Option to retrain or go back to the training page
-            if st.button("Go back to Training"):
-                st.session_state['page'] = 'train'
-                st.rerun()
+                st.success(f"The predicted PM2.5 level is: {prediction:.2f}")
+                
+                # Option to retrain or go back to the training page
+                if st.button("Go back to Training"):
+                    st.session_state['page'] = 'train'
+                    st.rerun()
+            except Exception as e:
+                st.error(f"Error loading model: {e}")
 
     else:
-        st.error("Upload Dataset in Data Modeling page")
+        st.error("No valid DataFrame found in session state. Please upload the data.")
