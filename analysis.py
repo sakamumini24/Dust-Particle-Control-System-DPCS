@@ -880,7 +880,7 @@ def show_predict():
                 # Make prediction
                 result = predict_single_data_point(model, input_data, X_train, scaler)
                 if result is not None:
-                    st.success(f"Predicted PM2.5: {result:.2f}")
+                    st.success(f"Predicted PM2.5 level: {result:.2f}")
 
                 # Option to return to training page
                 if st.button("Go back to Training"):
