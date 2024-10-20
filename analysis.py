@@ -528,7 +528,17 @@ def plot_feature_importance(model, model_name, feature_names):
     st.pyplot(fig)
 
 
+def save_model(model, model_name):
+    # Create the models directory if it doesn't exist
+    model_dir = os.path.join(os.getcwd(), 'models')
+    os.makedirs(model_dir, exist_ok=True)  # Ensure the directory exists
 
+    # Define the full path for the model file
+    model_filename = os.path.join(model_dir, f'{model_name}_model.pkl')
+
+    # Save the model using joblib
+    joblib.dump(model, model_filename, compress=3)
+    print(f"Model saved to: {model_filename}")
 
 
 
@@ -741,13 +751,8 @@ def show_Analysis():
                 st.write(result)
 
                 # Save the trained model
-                model_filename =os.path.join(os.getcwd(),'models',f'{model_choice}_model.pkl')
-                if model_choice=='Voting':
-                     st.info(f"Saving model to: {model_filename}")
-                     joblib.dump(model, model_filename, compress=3)  # Save with compression
-                else:
-                    st.info(f"Saving model to: {model_filename}")
-                    joblib.dump(model, model_filename)
+                # model_filename =os.path.join(os.getcwd(),'models',f'{model_choice}_model.pkl')
+                save_model(model, model_choice)
                 # Feature importance visualization
                 feature_names = X_train.columns
                 if model_choice != 'Voting':
