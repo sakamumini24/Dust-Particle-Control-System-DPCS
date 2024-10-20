@@ -57,12 +57,12 @@ def get_binary_file_downloader_html(bin_file, file_label='File'):
 
 
 
-# Evaluation function
-def evaluate_model(y_true, y_pred):
-    mae = mean_absolute_error(y_true, y_pred)
-    mse = mean_squared_error(y_true, y_pred)
-    r2 = r2_score(y_true, y_pred)
-    return mae, mse, r2
+# # Evaluation function
+# def evaluate_model(y_true, y_pred):
+#     mae = mean_absolute_error(y_true, y_pred)
+#     mse = mean_squared_error(y_true, y_pred)
+#     r2 = r2_score(y_true, y_pred)
+#     return mae, mse, r2
 
 @st.cache_data
 def convert_df(df):
@@ -743,10 +743,10 @@ def show_Analysis():
 
                 mae, mse, r2, rmse = evaluate_model(y_test, test_predictions)
                 result = {
-                    "mean_absolute_error": f"{mae:.4f}",
-                    "mean_squared_error": f"{mse:.4f}",
-                    "Root_mean_squared_error": f"{rmse:.4f}",
-                    "R2_score": f"{r2:.4f}",
+                    "mean_absolute_error": f"{mae}",
+                    "mean_squared_error": f"{mse}",
+                    "Root_mean_squared_error": f"{rmse}",
+                    "R2_score": f"{r2}",
                 }
 
                 st.write(result)
