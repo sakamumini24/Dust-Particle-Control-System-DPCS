@@ -842,7 +842,8 @@ def show_predict():
     input_data = np.array([pm10, temp, hum, press, wspd, wdir, rain, hour, minutes])
 
     # Check if uploaded data is present and valid in session state
-    if 'uploaded_data' in st.session_state:
+    if 'uploaded_data' in st.session_state and isinstance(st.session_state['uploaded_data'], pd.DataFrame):
+ 
         historical_data = st.session_state['uploaded_data']
 
         # Validate that the data is a DataFrame
@@ -889,3 +890,11 @@ def show_predict():
 
             except Exception as e:
                 st.error(f"Error during prediction: {e}")
+
+
+    else:
+        st.error("No valid DataFrame found in session state. Please upload the data.")
+
+
+
+ 
