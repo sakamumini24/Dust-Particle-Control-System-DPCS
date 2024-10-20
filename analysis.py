@@ -741,12 +741,13 @@ def show_Analysis():
                 st.write(result)
 
                 # Save the trained model
-                model_filename =BASE_DIR +f'/models/{model_choice}_model.pkl'
+                model_filename =os.path.join(os.getcwd(),'models',f'{model_choice}_model.pkl')
                 if model_choice=='Voting':
+                     st.info(f"Saving model to: {model_filename}")
                      joblib.dump(model, model_filename, compress=3)  # Save with compression
                 else:
-                     joblib.dump(model, model_filename)
-
+                    st.info(f"Saving model to: {model_filename}")
+                    joblib.dump(model, model_filename)
                 # Feature importance visualization
                 feature_names = X_train.columns
                 if model_choice != 'Voting':
@@ -768,8 +769,8 @@ def show_Analysis():
 
 
 
-                # st.success("Model trained successfully and saved.")
-                st.success(f"Model trained and saved as {model_filename}.")
+                st.success("Model trained successfully and saved.")
+
                 st.write("Now you can proceed to the prediction page.")
 
                 # # When the user wants to navigate to the prediction page
